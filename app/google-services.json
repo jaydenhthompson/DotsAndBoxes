@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "816345225131",
+    "firebase_url": "https://dotsandboxes-a0c3f.firebaseio.com",
+    "project_id": "dotsandboxes-a0c3f",
+    "storage_bucket": "dotsandboxes-a0c3f.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:816345225131:android:8e1f1ac7eb88327aa4e4ee",
+        "android_client_info": {
+          "package_name": "edu.utap.dotsandboxes"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "816345225131-mq9fkeimiq8gvmh47ucdijntr91nnrr7.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "edu.utap.dotsandboxes",
+            "certificate_hash": "a869db07c5dcd7c6d17251ac63f95dc64038b4ef"
+          }
+        },
+        {
+          "client_id": "816345225131-q7jhm6u42tmf0nd9cei7e1l3o1u3cjei.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBAcswa1txj8ZYzNzmiIC8wKym1o4hFDJg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "816345225131-q7jhm6u42tmf0nd9cei7e1l3o1u3cjei.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
