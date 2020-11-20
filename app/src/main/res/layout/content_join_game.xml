@@ -10,30 +10,33 @@
         android:id="@+id/joinGameSettingsLL"
         android:orientation="vertical"
         android:gravity="center"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toTopOf="@id/joinButton"
+        android:layout_margin="50dp"
         >
 
         <EditText
             android:id="@+id/joinGameNameET"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Game Name"
             android:textSize="30sp"
             android:singleLine="true"
+            android:gravity="center"
             />
 
         <EditText
             android:id="@+id/userDisplayNameET"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Display Name"
             android:textSize="30sp"
             android:singleLine="true"
+            android:gravity="center"
             />
 
     </LinearLayout>
