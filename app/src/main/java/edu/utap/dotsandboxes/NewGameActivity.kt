@@ -1,5 +1,6 @@
 package edu.utap.dotsandboxes
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.inputmethod.InputMethodManager
 import androidx.appcompat.app.AppCompatActivity
@@ -17,9 +18,14 @@ class NewGameActivity : AppCompatActivity() {
         numberOfPlayersPicker.minValue = 2
         numberOfPlayersPicker.maxValue = 4
         numberOfPlayersPicker.value = 3
+
+        setListeners()
     }
 
 
     private fun setListeners(){
+        startButton.setOnClickListener {
+            startActivity(Intent(this, GameActivity::class.java))
+        }
     }
 }
