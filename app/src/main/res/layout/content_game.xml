@@ -11,15 +11,15 @@
         android:id="@+id/scoreBoardLL"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="2"
+        android:layout_weight="1"
         android:orientation="horizontal"
         >
 
 
     </LinearLayout>
 
-    <edu.utap.dotsandboxes.gameresources.GameView
-        android:id="@+id/canvasFrame"
+    <ImageView
+        android:id="@+id/gameView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="10"
