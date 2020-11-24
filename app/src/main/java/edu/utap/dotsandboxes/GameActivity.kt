@@ -16,8 +16,10 @@ class GameActivity : AppCompatActivity() {
     private var xSpace = 0
     private var ySpace = 0
 
-    private var x = 10
+    private var x = 6
     private var y = 10
+
+    private var circleRadius = 0F
 
     private var points : ArrayList<Point> = arrayListOf()
     private var segments : ArrayList<Segment> = arrayListOf()
@@ -47,7 +49,9 @@ class GameActivity : AppCompatActivity() {
             gameHeight = gameView.height
 
             xSpace = gameWidth / (x + 1)
-            ySpace = gameHeight / (x + 1)
+            ySpace = gameHeight / (y + 1)
+
+            circleRadius = ((xSpace + ySpace) / 2F) / 5F
 
             initializeBoard()
         }
@@ -112,14 +116,14 @@ class GameActivity : AppCompatActivity() {
 
     private fun drawCurrentLine() {
         paint.color = Color.RED
-        paint.strokeWidth = 10F
+        paint.strokeWidth = circleRadius / 2
 
         canvas.drawLine(startPoint.x.toFloat(), startPoint.y.toFloat(),
                         endPoint.x.toFloat(), endPoint.y.toFloat(), paint)
     }
 
     private fun drawSegments() {
-        paint.strokeWidth = 10F
+        paint.strokeWidth = circleRadius / 2
 
         for(segment in segments){
             paint.color = segment.color
@@ -133,7 +137,7 @@ class GameActivity : AppCompatActivity() {
         paint.strokeWidth = 1F
 
         for(point in points) {
-            canvas.drawCircle(point.x.toFloat(), point.y.toFloat(), 20F, paint)
+            canvas.drawCircle(point.x.toFloat(), point.y.toFloat(), circleRadius, paint)
         }
     }
 
@@ -151,7 +155,7 @@ class GameActivity : AppCompatActivity() {
         for(point in points){
             var distance = sqrt((x - point.x).pow(2) + (y - point.y).pow(2))
             if(distance < currentBestDistance){
-                if(distance < 40) {
+                if(distance < circleRadius * 2) {
                     currentBestDistance = distance
                     closestPoint = point
                 }
