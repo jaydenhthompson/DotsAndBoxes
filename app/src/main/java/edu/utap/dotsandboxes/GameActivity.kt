@@ -1,16 +1,21 @@
 package edu.utap.dotsandboxes
 
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Paint
+import android.graphics.*
 import android.os.Bundle
+import android.view.MotionEvent
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.android.synthetic.main.content_game.*
 
 class GameActivity : AppCompatActivity() {
     private var gameWidth = 0
     private var gameHeight = 0
+    private var x = 10
+    private var y = 10
+
+    private var points : ArrayList<Pair<Int, Int>> = arrayListOf()
+
+    private val originPoint = Point()
 
     private lateinit var gameBitmap: Bitmap
 
@@ -27,16 +32,25 @@ class GameActivity : AppCompatActivity() {
         if(hasFocus)
         {
             gameWidth = gameView.width
-            gameHeight = gameView.measuredHeight
+            gameHeight = gameView.height
 
-            drawCircleGrid(10,10)
+            drawCircleGrid(x,y)
         }
     }
 
     private fun setListeners(){
         gameView.setOnTouchListener { v, event ->
             v.performClick()
-            event.
+            when(event.action){
+                MotionEvent.ACTION_DOWN ->{
+                    //originPoint = Point(event.x, event.y)
+                   Toast.makeText(this, "${event.x} $gameWidth", Toast.LENGTH_SHORT).show()
+                }
+                MotionEvent.ACTION_MOVE -> {
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                }
+            }
             true
         }
 
@@ -56,6 +70,7 @@ class GameActivity : AppCompatActivity() {
             for (j in 1..y){
                 val xCoordinate = i * width / (x + 1)
                 val yCoordinate = j * height / (y + 1)
+                points.add(Pair(xCoordinate, yCoordinate))
 
                 canvas.drawCircle(xCoordinate.toFloat(), yCoordinate.toFloat(), 20F, paint)
             }
