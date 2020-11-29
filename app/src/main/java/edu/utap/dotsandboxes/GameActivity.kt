@@ -4,6 +4,7 @@ import android.graphics.*
 import android.os.Bundle
 import android.view.MotionEvent
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.graphics.ColorUtils
 import kotlinx.android.synthetic.main.content_game.*
 import kotlin.math.abs
 import kotlin.math.pow
@@ -41,7 +42,7 @@ class GameActivity : AppCompatActivity() {
         }
     }
 
-    inner class Square(val topLeftPoint: Point, val bottomRightPoint: Point, val color: Int?) {
+    inner class Square(val topLeftPoint: Point, val bottomRightPoint: Point, var color: Int?) {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -81,10 +82,12 @@ class GameActivity : AppCompatActivity() {
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                     if(checkIfPointsAdjacent()){
-                        val segmentCandidate = Segment(startPoint, endPoint, playerColor)
+                        val lineColor = ColorUtils.blendARGB(playerColor, Color.BLACK, 0.15f)
+                        val segmentCandidate = Segment(startPoint, endPoint, lineColor)
                         // TODO: Add game logic (A successful add would indicate end of turn)
                         if(!segments.contains(segmentCandidate)) {
                             segments.add(segmentCandidate)
+                            evaluateCompletedSquares()
                         }
                     }
                     startPoint = Point()
@@ -229,7 +232,12 @@ class GameActivity : AppCompatActivity() {
     private fun evaluateCompletedSquares(){
         for(i in 0 until (columns - 1)){
             for (j in 0 until (rows - 1)){
-                
+                if(segmentsContain(pointMatrix[i][j], pointMatrix[i][j+1])
+                && segmentsContain(pointMatrix[i][j], pointMatrix[i+1][j])
+                && segmentsContain(pointMatrix[i][j+1], pointMatrix[i+1][j+1])
+                && segmentsContain(pointMatrix[i+1][j], pointMatrix[i+1][j+1])){
+                    squareMatrix[i][j].color = playerColor
+                }
             }
         }
     }
