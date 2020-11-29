@@ -13,25 +13,36 @@ class GameActivity : AppCompatActivity() {
     private var gameWidth = 0
     private var gameHeight = 0
 
-    private var xSpace = 0
-    private var ySpace = 0
+    private var columnWidth = 0
+    private var rowHeight = 0
 
-    private var x = 6
-    private var y = 10
+    private var columns = 6
+    private var rows = 10
 
     private var circleRadius = 0F
 
-    private var points : ArrayList<Point> = arrayListOf()
-    private var segments : ArrayList<Segment> = arrayListOf()
+    private var pointMatrix = arrayListOf<ArrayList<Point>>()
+    private var squareMatrix = arrayListOf<ArrayList<Square>>()
+    private var segments = arrayListOf<Segment>()
 
     private var startPoint = Point()
     private var endPoint = Point()
+    private var playerColor = Color.YELLOW
 
     private lateinit var gameBitmap: Bitmap
     private lateinit var canvas: Canvas
     private lateinit var paint: Paint
 
-    inner class Segment(val a: Point, val b: Point, val color: Int){}
+    inner class Segment(val a: Point, val b: Point, val color: Int){
+        fun equals(p1: Point, p2: Point) : Boolean {
+            if (p1 == a && p2 == b) return true
+            if (p1 == b && p2 == a) return true
+            return false
+        }
+    }
+
+    inner class Square(val topLeftPoint: Point, val bottomRightPoint: Point, val color: Int?) {
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,10 +59,10 @@ class GameActivity : AppCompatActivity() {
             gameWidth = gameView.width
             gameHeight = gameView.height
 
-            xSpace = gameWidth / (x + 1)
-            ySpace = gameHeight / (y + 1)
+            columnWidth = gameWidth / (columns + 1)
+            rowHeight = gameHeight / (rows + 1)
 
-            circleRadius = ((xSpace + ySpace) / 2F) / 5F
+            circleRadius = ((columnWidth + rowHeight) / 2F) / 5F
 
             initializeBoard()
         }
@@ -70,7 +81,8 @@ class GameActivity : AppCompatActivity() {
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                     if(checkIfPointsAdjacent()){
-                        val segmentCandidate = Segment(startPoint, endPoint, Color.YELLOW)
+                        val segmentCandidate = Segment(startPoint, endPoint, playerColor)
+                        // TODO: Add game logic (A successful add would indicate end of turn)
                         if(!segments.contains(segmentCandidate)) {
                             segments.add(segmentCandidate)
                         }
@@ -94,12 +106,19 @@ class GameActivity : AppCompatActivity() {
     }
 
     private fun initializeGrid(){
-        for (i in 1..x) {
-            for (j in 1..y) {
-                val xCoordinate = i * xSpace
-                val yCoordinate = j * ySpace
+        for (i in 1..columns) {
+            pointMatrix.add(arrayListOf())
+            for (j in 1..rows) {
+                val xCoordinate = i * columnWidth
+                val yCoordinate = j * rowHeight
 
-                points.add(Point(xCoordinate, yCoordinate))
+                pointMatrix[i - 1].add(Point(xCoordinate, yCoordinate))
+            }
+        }
+        for(i in 0 until (columns - 1)){
+            squareMatrix.add(arrayListOf())
+            for (j in 0 until (rows - 1)){
+                squareMatrix[i].add(Square(pointMatrix[i][j], pointMatrix[i+1][j+1], null))
             }
         }
     }
@@ -109,6 +128,7 @@ class GameActivity : AppCompatActivity() {
         canvas = Canvas(gameBitmap)
 
         drawCurrentLine()
+        drawSquares()
         drawSegments()
         drawCircleGrid()
         gameView.setImageBitmap(gameBitmap)
@@ -136,8 +156,24 @@ class GameActivity : AppCompatActivity() {
         paint.color = Color.BLACK
         paint.strokeWidth = 1F
 
-        for(point in points) {
-            canvas.drawCircle(point.x.toFloat(), point.y.toFloat(), circleRadius, paint)
+        for(column in pointMatrix) {
+            for(point in column) {
+                canvas.drawCircle(point.x.toFloat(), point.y.toFloat(), circleRadius, paint)
+            }
+        }
+    }
+
+    private fun drawSquares(){
+        for(column in squareMatrix){
+            for(square in column) {
+                square.color?.let { color ->
+                    paint.color = color
+                    canvas.drawRect(
+                            square.topLeftPoint.x.toFloat(), square.topLeftPoint.y.toFloat(),
+                            square.bottomRightPoint.x.toFloat(), square.bottomRightPoint.y.toFloat(),
+                            paint)
+                }
+            }
         }
     }
 
@@ -152,15 +188,16 @@ class GameActivity : AppCompatActivity() {
     private fun findClosestPoint(x: Float, y: Float) : Point {
         var closestPoint = Point(gameWidth, gameHeight)
         var currentBestDistance = Float.MAX_VALUE
-        for(point in points){
-            var distance = sqrt((x - point.x).pow(2) + (y - point.y).pow(2))
-            if(distance < currentBestDistance){
-                if(distance < circleRadius * 2) {
-                    currentBestDistance = distance
-                    closestPoint = point
-                }
-                else{
-                    closestPoint = Point(x.toInt(), y.toInt())
+        for(column in pointMatrix){
+            for(point in column) {
+                val distance = sqrt((x - point.x).pow(2) + (y - point.y).pow(2))
+                if (distance < currentBestDistance) {
+                    if (distance < circleRadius * 2) {
+                        currentBestDistance = distance
+                        closestPoint = point
+                    } else {
+                        closestPoint = Point(x.toInt(), y.toInt())
+                    }
                 }
             }
         }
@@ -170,15 +207,30 @@ class GameActivity : AppCompatActivity() {
 
     private fun checkIfPointsAdjacent() : Boolean{
         if(startPoint.x == endPoint.x){
-            if(abs(startPoint.y - endPoint.y) <= ySpace) {
+            if(abs(startPoint.y - endPoint.y) <= rowHeight) {
                 return true
             }
         }
         else if (startPoint.y == endPoint.y){
-            if(abs(startPoint.x - endPoint.x) <= xSpace){
+            if(abs(startPoint.x - endPoint.x) <= columnWidth){
                 return true
             }
         }
         return false
+    }
+
+    private fun segmentsContain(a : Point, b : Point) : Boolean {
+        for (segment in segments){
+            if(segment.equals(a, b)) return true
+        }
+        return false
+    }
+
+    private fun evaluateCompletedSquares(){
+        for(i in 0 until (columns - 1)){
+            for (j in 0 until (rows - 1)){
+                
+            }
+        }
     }
 }
