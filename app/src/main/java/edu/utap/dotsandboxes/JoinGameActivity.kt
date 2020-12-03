@@ -5,8 +5,10 @@ import android.os.Bundle
 import android.view.inputmethod.InputMethodManager
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.content_join_game.*
 import kotlinx.android.synthetic.main.content_main.*
 import kotlinx.android.synthetic.main.content_new_game.*
+import kotlinx.android.synthetic.main.content_new_game.userDisplayNameET
 
 class JoinGameActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -21,7 +23,13 @@ class JoinGameActivity : AppCompatActivity() {
 
     private fun setListeners(){
         startButton.setOnClickListener {
-            startActivity(Intent(this, GameActivity::class.java))
+            val joinGameIntent = Intent(this, GameActivity::class.java)
+            val extras = Bundle()
+            extras.putString(MainActivity.usernameKey, userDisplayNameET.text.toString())
+            extras.putString(MainActivity.gameNameKey, joinGameNameET.text.toString())
+            extras.putBoolean(MainActivity.joiningGameKey, true)
+
+            startActivity(joinGameIntent)
         }
     }
 }

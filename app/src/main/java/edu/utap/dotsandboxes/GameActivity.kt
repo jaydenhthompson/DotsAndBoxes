@@ -50,6 +50,15 @@ class GameActivity : AppCompatActivity() {
         setContentView(R.layout.activity_game)
         setSupportActionBar(null)
 
+        val extras = intent.extras!!
+        if(extras.getBoolean(MainActivity.joiningGameKey)){
+            columns = extras.getInt(MainActivity.numberOfColsKey)
+            rows = extras.getInt(MainActivity.numberOfRowsKey)
+        }
+        else{
+            //TODO: Join Game Logic
+        }
+
         setListeners()
     }
 
