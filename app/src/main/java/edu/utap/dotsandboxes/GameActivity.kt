@@ -151,7 +151,7 @@ class GameActivity : AppCompatActivity() {
         paint.strokeWidth = circleRadius / 2
 
         canvas.drawLine(startPoint.x.toFloat(), startPoint.y.toFloat(),
-                        endPoint.x.toFloat(), endPoint.y.toFloat(), paint)
+                endPoint.x.toFloat(), endPoint.y.toFloat(), paint)
     }
 
     private fun drawSegments() {
@@ -160,7 +160,7 @@ class GameActivity : AppCompatActivity() {
         for(segment in segments){
             paint.color = segment.color
             canvas.drawLine(segment.a.x.toFloat(), segment.a.y.toFloat(),
-                            segment.b.x.toFloat(), segment.b.y.toFloat(), paint)
+                    segment.b.x.toFloat(), segment.b.y.toFloat(), paint)
         }
     }
 
@@ -204,12 +204,8 @@ class GameActivity : AppCompatActivity() {
             for(point in column) {
                 val distance = sqrt((x - point.x).pow(2) + (y - point.y).pow(2))
                 if (distance < currentBestDistance) {
-                    if (distance < circleRadius * 2) {
-                        currentBestDistance = distance
-                        closestPoint = point
-                    } else {
-                        closestPoint = Point(x.toInt(), y.toInt())
-                    }
+                    currentBestDistance = distance
+                    closestPoint = point
                 }
             }
         }
@@ -242,9 +238,9 @@ class GameActivity : AppCompatActivity() {
         for(i in 0 until (columns - 1)){
             for (j in 0 until (rows - 1)){
                 if(segmentsContain(pointMatrix[i][j], pointMatrix[i][j+1])
-                && segmentsContain(pointMatrix[i][j], pointMatrix[i+1][j])
-                && segmentsContain(pointMatrix[i][j+1], pointMatrix[i+1][j+1])
-                && segmentsContain(pointMatrix[i+1][j], pointMatrix[i+1][j+1])){
+                        && segmentsContain(pointMatrix[i][j], pointMatrix[i+1][j])
+                        && segmentsContain(pointMatrix[i][j+1], pointMatrix[i+1][j+1])
+                        && segmentsContain(pointMatrix[i+1][j], pointMatrix[i+1][j+1])){
                     squareMatrix[i][j].color = playerColor
                 }
             }
