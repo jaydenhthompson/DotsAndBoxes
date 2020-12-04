@@ -33,12 +33,14 @@
         >
 
         <EditText
+            android:id="@+id/chatET"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="7"
             />
 
         <ImageButton
+            android:id="@+id/sendChatButton"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"

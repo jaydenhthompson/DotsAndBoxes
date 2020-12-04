@@ -7,5 +7,4 @@ data class ChatData(
         var message: String? = null,
         @ServerTimestamp
         val timeStamp: Timestamp? = null,
-        var rowID: String = ""
 )

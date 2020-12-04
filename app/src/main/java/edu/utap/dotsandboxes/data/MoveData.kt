@@ -9,8 +9,4 @@ data class MoveData(
     var secondX : Int? = null,
     var secondY : Int? = null,
     var color   : Int? = null,
-
-    @ServerTimestamp
-    val timestamp : Timestamp? = null,
-    val rowID: String = ""
 )

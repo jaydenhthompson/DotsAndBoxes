@@ -48,7 +48,7 @@ class NewGameActivity : AppCompatActivity() {
 
                 extras.putString(MainActivity.usernameKey, userDisplayNameET.text.toString())
                 extras.putString(MainActivity.gameNameKey, newGameNameET.text.toString())
-                extras.putBoolean(MainActivity.joiningGameKey, true)
+                extras.putBoolean(MainActivity.joiningGameKey, false)
 
                 extras.putInt(MainActivity.numberOfPlayersKey,
                         numberOfPlayersSpinner.selectedItem.toString().toInt())
