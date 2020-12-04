@@ -150,8 +150,10 @@ class GameActivity : AppCompatActivity() {
         paint.color = Color.RED
         paint.strokeWidth = circleRadius / 2
 
-        canvas.drawLine(startPoint.x.toFloat(), startPoint.y.toFloat(),
-                endPoint.x.toFloat(), endPoint.y.toFloat(), paint)
+        val start = pointMatrix[startPoint.x][startPoint.y]
+        val end   = pointMatrix[endPoint.x][endPoint.y]
+        canvas.drawLine(start.x.toFloat(), start.y.toFloat(),
+                end.x.toFloat(), end.y.toFloat(), paint)
     }
 
     private fun drawSegments() {
@@ -159,8 +161,10 @@ class GameActivity : AppCompatActivity() {
 
         for(segment in segments){
             paint.color = segment.color
-            canvas.drawLine(segment.a.x.toFloat(), segment.a.y.toFloat(),
-                    segment.b.x.toFloat(), segment.b.y.toFloat(), paint)
+            val start = pointMatrix[segment.a.x][segment.a.y]
+            val end   = pointMatrix[segment.b.x][segment.b.y]
+            canvas.drawLine(start.x.toFloat(), start.y.toFloat(),
+                    end.x.toFloat(), end.y.toFloat(), paint)
         }
     }
 
@@ -200,12 +204,13 @@ class GameActivity : AppCompatActivity() {
     private fun findClosestPoint(x: Float, y: Float) : Point {
         var closestPoint = Point(gameWidth, gameHeight)
         var currentBestDistance = Float.MAX_VALUE
-        for(column in pointMatrix){
-            for(point in column) {
-                val distance = sqrt((x - point.x).pow(2) + (y - point.y).pow(2))
+        for(i in 0 until (columns - 1)){
+            for (j in 0 until (rows - 1)){
+                val distance = sqrt((x - pointMatrix[i][j].x).pow(2)
+                                     + (y - pointMatrix[i][j].y).pow(2))
                 if (distance < currentBestDistance) {
                     currentBestDistance = distance
-                    closestPoint = point
+                    closestPoint = Point(i,j)
                 }
             }
         }
@@ -214,6 +219,8 @@ class GameActivity : AppCompatActivity() {
     }
 
     private fun checkIfPointsAdjacent() : Boolean{
+        if(startPoint == endPoint)
+            return false
         if(startPoint.x == endPoint.x){
             if(abs(startPoint.y - endPoint.y) <= rowHeight) {
                 return true
@@ -237,10 +244,10 @@ class GameActivity : AppCompatActivity() {
     private fun evaluateCompletedSquares(){
         for(i in 0 until (columns - 1)){
             for (j in 0 until (rows - 1)){
-                if(segmentsContain(pointMatrix[i][j], pointMatrix[i][j+1])
-                        && segmentsContain(pointMatrix[i][j], pointMatrix[i+1][j])
-                        && segmentsContain(pointMatrix[i][j+1], pointMatrix[i+1][j+1])
-                        && segmentsContain(pointMatrix[i+1][j], pointMatrix[i+1][j+1])){
+                if(segmentsContain(Point(i,j), Point(i,j+1))
+                        && segmentsContain(Point(i,j), Point(i+1,j))
+                        && segmentsContain(Point(i,j+1), Point(i+1,j+1))
+                        && segmentsContain(Point(i+1,j), Point(i+1,j+1))){
                     squareMatrix[i][j].color = playerColor
                 }
             }
