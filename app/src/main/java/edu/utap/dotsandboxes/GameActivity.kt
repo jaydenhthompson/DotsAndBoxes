@@ -212,7 +212,7 @@ class GameActivity : AppCompatActivity() {
         for (i in 0 until columns) {
             pointMatrix.add(arrayListOf())
             for (j in 0 until rows) {
-                pointMatrix[i][j] = Point()
+                pointMatrix[i].add(Point())
             }
         }
     }
