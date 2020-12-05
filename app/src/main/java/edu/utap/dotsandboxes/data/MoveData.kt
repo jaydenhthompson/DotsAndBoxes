@@ -8,5 +8,5 @@ data class MoveData(
     var firstY  : Int? = null,
     var secondX : Int? = null,
     var secondY : Int? = null,
-    var color   : Int? = null,
+    var player  : Int? = null,
 )

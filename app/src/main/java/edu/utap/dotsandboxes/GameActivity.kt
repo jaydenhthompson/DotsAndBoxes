@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.*
 import android.os.Bundle
 import android.util.Log
+import android.view.Gravity
 import android.view.MotionEvent
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
@@ -12,7 +13,6 @@ import androidx.core.graphics.ColorUtils
 import androidx.lifecycle.MutableLiveData
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.firestore.FirebaseFirestore
-import edu.utap.dotsandboxes.data.ChatData
 import edu.utap.dotsandboxes.data.GameData
 import edu.utap.dotsandboxes.data.MoveData
 import kotlinx.android.synthetic.main.content_game.*
@@ -30,8 +30,6 @@ class GameActivity : AppCompatActivity() {
     private var maxPlayerNumber = 0
 
     private var gameOwner = false
-    private var playerNames = MutableLiveData<List<String>>()
-
     private val playerColors = arrayListOf(Color.YELLOW, Color.BLUE, Color.GREEN, Color.RED)
 
     private var columnWidth = 0
@@ -50,10 +48,10 @@ class GameActivity : AppCompatActivity() {
     private var endPoint = Point()
 
     private var playerName = ""
-    private var playerNumber = -1
-    private var playerColor = -1
+    private var playerNumber = 0
 
     private var gameData = GameData()
+    private var previousMessage : String? = null
 
     private lateinit var gameBitmap: Bitmap
     private lateinit var canvas: Canvas
@@ -66,13 +64,11 @@ class GameActivity : AppCompatActivity() {
     //////////////////////////
     companion object{
         val globalGamesCollection = "GlobalGames"
-        val gameChatCollection = "Chat"
-        val gameMoveCollection = "Moves"
     }
 
     private var db : FirebaseFirestore = FirebaseFirestore.getInstance()
 
-    inner class Segment(val a: Point, val b: Point, val color: Int){
+    inner class Segment(val a: Point, val b: Point, val player: Int){
         fun equals(p1: Point, p2: Point) : Boolean {
             if (p1 == a && p2 == b) return true
             if (p1 == b && p2 == a) return true
@@ -80,7 +76,7 @@ class GameActivity : AppCompatActivity() {
         }
     }
 
-    inner class Square(val topLeftPoint: Point, val bottomRightPoint: Point, var color: Int?) {}
+    inner class Square(val topLeftPoint: Point, val bottomRightPoint: Point, var player: Int?) {}
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -140,21 +136,27 @@ class GameActivity : AppCompatActivity() {
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                     if(checkIfPointsAdjacent()){
-                        val lineColor = ColorUtils.blendARGB(playerColor, Color.BLACK, 0.15f)
-                        val segmentCandidate = Segment(startPoint, endPoint, lineColor)
+                        val segmentCandidate = Segment(startPoint, endPoint, playerNumber)
                         // TODO: Add game logic (A successful add would indicate end of turn)
                         if(!segments.contains(segmentCandidate)) {
                             segments.add(segmentCandidate)
-                            evaluateCompletedSquares()
+                            performMove()
                         }
                     }
                     startPoint = Point()
                     endPoint = Point()
-                    drawGame()
                 }
             }
             true
         }
+    }
+
+    private fun performMove(){
+        if(!evaluateCompletedSquares()) {
+            gameData.turn = (gameData.turn!! + 1) % gameData.currentNumPlayers!!
+        }
+        segmentsToMoveData()
+        updateGame()
     }
 
     private fun initializeBoard(){
@@ -220,7 +222,7 @@ class GameActivity : AppCompatActivity() {
         paint.strokeWidth = circleRadius / 2
 
         for(segment in segments){
-            paint.color = segment.color
+            paint.color = ColorUtils.blendARGB(playerColors[segment.player], Color.BLACK, 0.15f)
             val start = pointMatrix[segment.a.x][segment.a.y]
             val end   = pointMatrix[segment.b.x][segment.b.y]
             canvas.drawLine(start.x.toFloat(), start.y.toFloat(),
@@ -242,8 +244,8 @@ class GameActivity : AppCompatActivity() {
     private fun drawSquares(){
         for(column in squareMatrix){
             for(square in column) {
-                square.color?.let { color ->
-                    paint.color = color
+                square.player?.let { player ->
+                    paint.color = playerColors[player]
                     canvas.drawRect(
                             square.topLeftPoint.x.toFloat(), square.topLeftPoint.y.toFloat(),
                             square.bottomRightPoint.x.toFloat(), square.bottomRightPoint.y.toFloat(),
@@ -286,12 +288,12 @@ class GameActivity : AppCompatActivity() {
         if(startPoint == endPoint)
             return false
         if(startPoint.x == endPoint.x){
-            if(abs(startPoint.y - endPoint.y) <= rowHeight) {
+            if(abs(startPoint.y - endPoint.y) == 1) {
                 return true
             }
         }
         else if (startPoint.y == endPoint.y){
-            if(abs(startPoint.x - endPoint.x) <= columnWidth){
+            if(abs(startPoint.x - endPoint.x) == 1){
                 return true
             }
         }
@@ -313,10 +315,10 @@ class GameActivity : AppCompatActivity() {
                 && segmentsContain(Point(i,j), Point(i+1,j))
                 && segmentsContain(Point(i,j+1), Point(i+1,j+1))
                 && segmentsContain(Point(i+1,j), Point(i+1,j+1))){
-                    squareMatrix[i][j].color?.let{
+                    if(squareMatrix[i][j].player == null){
                         newBox = true
+                        squareMatrix[i][j].player = segments.last().player
                     }
-                    squareMatrix[i][j].color = playerColor //TODO: Set to correct color
                 }
             }
         }
@@ -332,6 +334,46 @@ class GameActivity : AppCompatActivity() {
             .set(gameData)
     }
 
+    private fun moveDataToSegments(){
+        segments.clear()
+        gameData.moves?.let { moves ->
+            for (move in moves) {
+                segments.add(
+                    Segment(
+                        Point(move.firstX!!, move.firstY!!),
+                        Point(move.secondX!!, move.secondY!!),
+                        move.player!!
+                    )
+                )
+                evaluateCompletedSquares()
+            }
+        }
+    }
+
+    private fun segmentsToMoveData(){
+        gameData.moves?.clear()
+        for(segment in segments){
+            gameData.moves?.add(MoveData(
+                segment.a.x,
+                segment.a.y,
+                segment.b.x,
+                segment.b.y,
+                segment.player
+            ))
+        }
+    }
+
+    private fun displayMessage(){
+        if(previousMessage != gameData.chat){
+            previousMessage = gameData.chat
+            previousMessage?.let{message ->
+                val toast = Toast.makeText(this, message, Toast.LENGTH_SHORT)
+                toast.setGravity(Gravity.BOTTOM or Gravity.CENTER, 0, -10)
+                toast.show()
+            }
+        }
+    }
+
     private fun watchGame(){
         db.collection(globalGamesCollection).document(gameName)
             .addSnapshotListener { snapshot, error ->
@@ -339,7 +381,10 @@ class GameActivity : AppCompatActivity() {
                     Log.e("Snapshot Error", error.toString())
                     return@addSnapshotListener
                 }
-                val gameUpdate = snapshot!!.toObject(GameData::class.java)
+                gameData = snapshot!!.toObject(GameData::class.java)!!
+                displayMessage()
+                moveDataToSegments()
+                drawGame()
             }
     }
 
@@ -347,27 +392,34 @@ class GameActivity : AppCompatActivity() {
         db.collection(globalGamesCollection).document(gameName).get()
             .addOnSuccessListener {document ->
                 document?.let {
-                    gameData = it.toObject(GameData::class.java)!!
-                    if(gameData.started!!){
-                        finishWithMessage("$gameName has already started")
-                        return@addOnSuccessListener
-                    }
-                    if(gameData.finished!!){
-                        finishWithMessage("$gameName has already finished")
-                        return@addOnSuccessListener
-                    }
-                    if(gameData.currentNumPlayers!! >= gameData.maxPlayers!!){
-                        finishWithMessage("$gameName is already full")
-                        return@addOnSuccessListener
-                    }
-                    playerNumber = gameData.currentNumPlayers!!
-                    gameData.currentNumPlayers = gameData.currentNumPlayers!! + 1
-                    gameData.playerNames?.add(playerName)
-                    columns = gameData.numColumns!!
-                    rows = gameData.numRows!!
+                    val data = it.toObject(GameData::class.java)
+                    if(data != null){
+                        gameData = data
+                            if (gameData.started!!) {
+                                finishWithMessage("$gameName has already started")
+                                return@addOnSuccessListener
+                            }
+                        if (gameData.finished!!) {
+                            finishWithMessage("$gameName has already finished")
+                            return@addOnSuccessListener
+                        }
+                        if (gameData.currentNumPlayers!! >= gameData.maxPlayers!!) {
+                            finishWithMessage("$gameName is already full")
+                            return@addOnSuccessListener
+                        }
+                        playerNumber = gameData.currentNumPlayers!!
+                        gameData.currentNumPlayers = gameData.currentNumPlayers!! + 1
+                        gameData.playerNames?.add(playerName)
+                        columns = gameData.numColumns!!
+                        rows = gameData.numRows!!
 
-                    updateGame()
-                    if(screenLoaded) initializeBoard()
+                        updateGame()
+                        if (screenLoaded) initializeBoard()
+                        watchGame()
+                    }
+                    else{
+                        finishWithMessage("$gameName does not exist.")
+                    }
                 }
             }
             .addOnFailureListener {
@@ -394,6 +446,9 @@ class GameActivity : AppCompatActivity() {
             .set(gameData)
             .addOnFailureListener {
                 finishWithMessage("Failed to start game")
+            }
+            .addOnSuccessListener {
+                watchGame()
             }
     }
 
