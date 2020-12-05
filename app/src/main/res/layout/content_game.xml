@@ -11,7 +11,7 @@
         android:id="@+id/scoreBoardLL"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_weight="1.5"
         android:orientation="horizontal"
         >
 
@@ -23,6 +23,18 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="10"
+        />
+
+    <TextView
+        android:id="@+id/chatTV"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="2"
+        android:scrollbars="vertical"
+        android:layout_marginLeft="8dp"
+        android:layout_marginRight="8dp"
+        android:textStyle="bold"
+        android:gravity="bottom"
         />
 
     <LinearLayout

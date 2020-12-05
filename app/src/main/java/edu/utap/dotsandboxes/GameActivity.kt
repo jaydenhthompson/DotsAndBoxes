@@ -3,6 +3,7 @@ package edu.utap.dotsandboxes
 import android.content.Context
 import android.graphics.*
 import android.os.Bundle
+import android.text.method.ScrollingMovementMethod
 import android.util.Log
 import android.view.Gravity
 import android.view.MotionEvent
@@ -51,11 +52,12 @@ class GameActivity : AppCompatActivity() {
     private var playerNumber = 0
 
     private var gameData = GameData()
-    private var previousMessage : String? = null
+    private var currentTurn : Int? = null
 
     private lateinit var gameBitmap: Bitmap
     private lateinit var canvas: Canvas
     private lateinit var paint: Paint
+    private lateinit var toast : Toast
 
     private var screenLoaded = false
 
@@ -63,7 +65,7 @@ class GameActivity : AppCompatActivity() {
     /// Firebase Variables ///
     //////////////////////////
     companion object{
-        val globalGamesCollection = "GlobalGames"
+        const val globalGamesCollection = "GlobalGames"
     }
 
     private var db : FirebaseFirestore = FirebaseFirestore.getInstance()
@@ -126,6 +128,7 @@ class GameActivity : AppCompatActivity() {
 
         gameView.setOnTouchListener { v, event ->
             v.performClick()
+            if(gameData.turn != playerNumber) event.action = MotionEvent.ACTION_CANCEL
             when(event.action){
                 MotionEvent.ACTION_DOWN ->{
                     findAndSetStartPoint(event.x, event.y)
@@ -134,17 +137,25 @@ class GameActivity : AppCompatActivity() {
                     findAndSetEndPoint(event.x, event.y)
                     drawGame()
                 }
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    if(checkIfPointsAdjacent()){
+                MotionEvent.ACTION_UP -> {
+                    if(gameData.currentNumPlayers!! <= 1) {
+                        displayMessage("Trying to play by yourself?")
+                    }
+                    else if(checkIfPointsAdjacent()){
                         val segmentCandidate = Segment(startPoint, endPoint, playerNumber)
-                        // TODO: Add game logic (A successful add would indicate end of turn)
-                        if(!segments.contains(segmentCandidate)) {
+                        startPoint = Point()
+                        endPoint = Point()
+                        if(!segmentsContain(segmentCandidate.a, segmentCandidate.b)) {
                             segments.add(segmentCandidate)
                             performMove()
                         }
+                        else {
+                            drawGame()
+                        }
                     }
-                    startPoint = Point()
-                    endPoint = Point()
+                }
+                MotionEvent.ACTION_CANCEL -> {
+                    displayMessage("Please wait for your turn")
                 }
             }
             true
@@ -152,6 +163,7 @@ class GameActivity : AppCompatActivity() {
     }
 
     private fun performMove(){
+        if(gameOwner) gameData.started = true
         if(!evaluateCompletedSquares()) {
             gameData.turn = (gameData.turn!! + 1) % gameData.currentNumPlayers!!
         }
@@ -164,26 +176,29 @@ class GameActivity : AppCompatActivity() {
         gameWidth = gameView.width
         gameHeight = gameView.height
 
-        columnWidth = gameWidth / (columns + 1)
-        rowHeight = gameHeight / (rows + 1)
+        columnWidth = gameWidth / columns
+        rowHeight = gameHeight / rows
 
         circleRadius = ((columnWidth + rowHeight) / 2F) / 5F
 
         paint = Paint()
         paint.isAntiAlias = true
+        toast = Toast.makeText(this, "", Toast.LENGTH_LONG)
+
+        chatTV.movementMethod = ScrollingMovementMethod()
 
         initializeGrid()
         drawGame()
     }
 
     private fun initializeGrid(){
-        for (i in 1..columns) {
+        for (i in 0 until columns) {
             pointMatrix.add(arrayListOf())
-            for (j in 1..rows) {
-                val xCoordinate = i * columnWidth
-                val yCoordinate = j * rowHeight
+            for (j in 0 until rows) {
+                val xCoordinate = (i * columnWidth) + (columnWidth / 2)
+                val yCoordinate = (j * rowHeight) + (rowHeight / 2)
 
-                pointMatrix[i - 1].add(Point(xCoordinate, yCoordinate))
+                pointMatrix[i].add(Point(xCoordinate, yCoordinate))
             }
         }
         for(i in 0 until (columns - 1)){
@@ -206,10 +221,11 @@ class GameActivity : AppCompatActivity() {
         drawSegments()
         drawCircleGrid()
         gameView.setImageBitmap(gameBitmap)
+        setChatText()
     }
 
     private fun drawCurrentLine() {
-        paint.color = Color.RED
+        paint.color = Color.BLACK
         paint.strokeWidth = circleRadius / 2
 
         val start = pointMatrix[startPoint.x][startPoint.y]
@@ -255,6 +271,16 @@ class GameActivity : AppCompatActivity() {
         }
     }
 
+    private fun setChatText(){
+        chatTV.text = gameData.chat
+        hideKeyboard()
+    }
+
+    private fun hideKeyboard(){
+        (applicationContext.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
+            .hideSoftInputFromWindow(window.decorView.rootView.windowToken, 0)
+    }
+
     //////////////////
     /// Game Logic ///
     //////////////////
@@ -270,8 +296,8 @@ class GameActivity : AppCompatActivity() {
     private fun findClosestPoint(x: Float, y: Float) : Point {
         var closestPoint = Point(gameWidth, gameHeight)
         var currentBestDistance = Float.MAX_VALUE
-        for(i in 0 until (columns - 1)){
-            for (j in 0 until (rows - 1)){
+        for(i in 0 until (columns)){
+            for (j in 0 until (rows)){
                 val distance = sqrt((x - pointMatrix[i][j].x).pow(2)
                                      + (y - pointMatrix[i][j].y).pow(2))
                 if (distance < currentBestDistance) {
@@ -363,18 +389,15 @@ class GameActivity : AppCompatActivity() {
         }
     }
 
-    private fun displayMessage(){
-        if(previousMessage != gameData.chat){
-            previousMessage = gameData.chat
-            previousMessage?.let{message ->
-                val toast = Toast.makeText(this, message, Toast.LENGTH_SHORT)
-                toast.setGravity(Gravity.BOTTOM or Gravity.CENTER, 0, -10)
-                toast.show()
-            }
-        }
+    private fun displayMessage(message: String){
+        toast.cancel()
+        toast = Toast.makeText(this, message, Toast.LENGTH_SHORT)
+        toast.setGravity(Gravity.CENTER, 0, 0)
+        toast.show()
     }
 
     private fun watchGame(){
+        sendChat(true)
         db.collection(globalGamesCollection).document(gameName)
             .addSnapshotListener { snapshot, error ->
                 error?.let {
@@ -382,9 +405,11 @@ class GameActivity : AppCompatActivity() {
                     return@addSnapshotListener
                 }
                 gameData = snapshot!!.toObject(GameData::class.java)!!
-                displayMessage()
                 moveDataToSegments()
                 drawGame()
+                if(currentTurn != gameData.turn){
+                    currentTurn = gameData.turn
+                }
             }
     }
 
@@ -438,6 +463,7 @@ class GameActivity : AppCompatActivity() {
             numRows = rows
             moves = arrayListOf()
             turn = 0
+            chat = ""
         }
 
         // Make sure game is reset
@@ -452,14 +478,17 @@ class GameActivity : AppCompatActivity() {
             }
     }
 
-    private fun sendChat(){
+    private fun sendChat(joinMessage : Boolean = false){
+        var addition = chatET.text.toString()
+        if(joinMessage) addition = "JOINED"
+
+        var chatText = "${gameData.chat!!}\n$playerName: $addition"
         db.collection(globalGamesCollection)
             .document(gameName)
-            .update("chat", chatET.text.toString())
+            .update("chat", chatText)
             .addOnSuccessListener {
                 chatET.text.clear()
-                (applicationContext.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
-                    .hideSoftInputFromWindow(window.decorView.rootView.windowToken, 0)
+                hideKeyboard()
             }
             .addOnFailureListener {  }
     }
