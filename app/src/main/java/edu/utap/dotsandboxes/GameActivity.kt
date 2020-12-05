@@ -129,6 +129,14 @@ class GameActivity : AppCompatActivity() {
     /// Initialize Game ///
     ///////////////////////
     private fun setListeners(){
+        gameView.addOnLayoutChangeListener { v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
+            if(screenLoaded){
+                if(columns != 0) {
+                    initializeGrid()
+                    drawGame()
+                }
+            }
+        }
         sendChatButton.setOnClickListener {
             sendChat()
         }
@@ -188,7 +196,18 @@ class GameActivity : AppCompatActivity() {
 
     @SuppressLint("ShowToast")
     private fun initializeBoard(){
+        paint = Paint()
+        paint.isAntiAlias = true
+        toast = Toast.makeText(this, "", Toast.LENGTH_LONG)
 
+        chatTV.movementMethod = ScrollingMovementMethod()
+
+        initializeGrid()
+        initializeSquareMatrix()
+        drawGame()
+    }
+
+    private fun initializeGrid(){
         gameWidth = gameView.width
         gameHeight = gameView.height
 
@@ -197,17 +216,7 @@ class GameActivity : AppCompatActivity() {
 
         circleRadius = ((columnWidth + rowHeight) / 2F) / 5F
 
-        paint = Paint()
-        paint.isAntiAlias = true
-        toast = Toast.makeText(this, "", Toast.LENGTH_LONG)
-
-        chatTV.movementMethod = ScrollingMovementMethod()
-
-        initializeGrid()
-        drawGame()
-    }
-
-    private fun initializeGrid(){
+        pointMatrix.clear()
         for (i in 0 until columns) {
             pointMatrix.add(arrayListOf())
             for (j in 0 until rows) {
@@ -217,6 +226,9 @@ class GameActivity : AppCompatActivity() {
                 pointMatrix[i].add(Point(xCoordinate, yCoordinate))
             }
         }
+    }
+
+    private fun initializeSquareMatrix() {
         for(i in 0 until (columns - 1)){
             squareMatrix.add(arrayListOf())
             for (j in 0 until (rows - 1)){
@@ -239,6 +251,7 @@ class GameActivity : AppCompatActivity() {
         gameView.setImageBitmap(gameBitmap)
         setChatText()
         drawScores()
+        drawTurn()
     }
 
     private fun drawCurrentLine() {
@@ -297,7 +310,6 @@ class GameActivity : AppCompatActivity() {
 
     private fun setChatText(){
         chatTV.text = gameData.chat
-        hideKeyboard()
     }
 
     private fun hideKeyboard(){
@@ -379,6 +391,20 @@ class GameActivity : AppCompatActivity() {
         }
         if(allSquaresFilled) done = true
         return newBox
+    }
+
+    private fun drawTurn() {
+        yellowScoreTV.setBackgroundColor(Color.WHITE)
+        blueScoreTV.setBackgroundColor(Color.WHITE)
+        greenScoreTV.setBackgroundColor(Color.WHITE)
+        redScoreTV.setBackgroundColor(Color.WHITE)
+
+        when(gameData.turn) {
+            0 -> yellowScoreTV.setBackgroundColor(Color.GRAY)
+            1 -> blueScoreTV . setBackgroundColor (Color.GRAY)
+            2 -> greenScoreTV . setBackgroundColor (Color.GRAY)
+            3 -> redScoreTV . setBackgroundColor (Color.GRAY)
+        }
     }
 
     /////////////////////////////////////////
