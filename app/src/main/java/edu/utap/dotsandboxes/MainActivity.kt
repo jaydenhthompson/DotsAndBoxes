@@ -43,9 +43,5 @@ class MainActivity : AppCompatActivity() {
         joinGameButton.setOnClickListener {
             startActivity(Intent(this, JoinGameActivity::class.java))
         }
-
-        statisticsButton.setOnClickListener {
-            startActivity(Intent(this, StatisticsActivity::class.java))
-        }
     }
 }

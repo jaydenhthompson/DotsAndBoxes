@@ -16,6 +16,53 @@
         android:orientation="horizontal"
         >
 
+        <TextView
+            android:id="@+id/yellowScoreTV"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:textColor="#ffff00"
+            android:textStyle="bold"
+            android:textSize="50sp"
+            android:text="0"
+            />
+
+        <TextView
+            android:id="@+id/blueScoreTV"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:textColor="#0000ff"
+            android:textStyle="bold"
+            android:textSize="50sp"
+            android:text="0"
+            />
+
+        <TextView
+            android:id="@+id/greenScoreTV"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:textColor="#00ff00"
+            android:textStyle="bold"
+            android:textSize="50sp"
+            android:text="0"
+            />
+
+        <TextView
+            android:id="@+id/redScoreTV"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:textColor="#ff0000"
+            android:textStyle="bold"
+            android:textSize="50sp"
+            android:text="0"
+            />
 
     </LinearLayout>
 

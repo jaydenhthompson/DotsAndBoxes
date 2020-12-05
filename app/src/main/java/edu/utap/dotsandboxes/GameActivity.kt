@@ -31,15 +31,17 @@ class GameActivity : AppCompatActivity() {
     private var gameWidth = 0
     private var gameHeight = 0
     private var maxPlayerNumber = 0
+    private var done = false
 
     private var gameOwner = false
     private val playerColors = arrayListOf(Color.YELLOW, Color.BLUE, Color.GREEN, Color.RED)
+    private val scores = arrayListOf(0,0,0,0)
 
     private var columnWidth = 0
     private var rowHeight = 0
 
-    private var columns = 1
-    private var rows = 1
+    private var columns = 0
+    private var rows = 0
 
     private var circleRadius = 0F
 
@@ -54,7 +56,6 @@ class GameActivity : AppCompatActivity() {
     private var playerNumber = 0
 
     private var gameData = GameData()
-    private var currentTurn : Int? = null
 
     private lateinit var gameBitmap: Bitmap
     private lateinit var canvas: Canvas
@@ -113,7 +114,9 @@ class GameActivity : AppCompatActivity() {
         if(hasFocus)
         {
             screenLoaded = true
-            initializeBoard()
+            if(columns != 0) {
+                initializeBoard()
+            }
         }
     }
 
@@ -132,33 +135,39 @@ class GameActivity : AppCompatActivity() {
 
         gameView.setOnTouchListener { v, event ->
             v.performClick()
-            if(gameData.turn != playerNumber) event.action = MotionEvent.ACTION_CANCEL
-            when(event.action){
-                MotionEvent.ACTION_DOWN ->{
-                    findAndSetStartPoint(event.x, event.y)
+            var message = ""
+
+            if(!gameData.finished!!) {
+                if (gameData.turn != playerNumber) {
+                    event.action = MotionEvent.ACTION_CANCEL
+                    message = "It's not your turn"
                 }
-                MotionEvent.ACTION_MOVE -> {
-                    findAndSetEndPoint(event.x, event.y)
-                    drawGame()
-                }
-                MotionEvent.ACTION_UP -> {
-                    if(gameData.currentNumPlayers!! <= 1) {
-                        displayMessage("Trying to play by yourself?")
+                when (event.action) {
+                    MotionEvent.ACTION_DOWN -> {
+                        findAndSetStartPoint(event.x, event.y)
+                    }
+                    MotionEvent.ACTION_MOVE -> {
+                        findAndSetEndPoint(event.x, event.y)
                         drawGame()
                     }
-                    else if(checkIfPointsAdjacent()){
-                        val segmentCandidate = Segment(startPoint, endPoint, playerNumber)
-                        if(!segmentsContain(segmentCandidate.a, segmentCandidate.b)) {
-                            segments.add(segmentCandidate)
-                            performMove()
+                    MotionEvent.ACTION_UP -> {
+                        if (gameData.currentNumPlayers!! <= 1) {
+                            displayMessage("Trying to play by yourself?")
+                            drawGame()
+                        } else if (checkIfPointsAdjacent()) {
+                            val segmentCandidate = Segment(startPoint, endPoint, playerNumber)
+                            if (!segmentsContain(segmentCandidate.a, segmentCandidate.b)) {
+                                segments.add(segmentCandidate)
+                                performMove()
+                            }
                         }
+                        startPoint = Point()
+                        endPoint = Point()
+                        drawGame()
                     }
-                    startPoint = Point()
-                    endPoint = Point()
-                    drawGame()
-                }
-                MotionEvent.ACTION_CANCEL -> {
-                    displayMessage("Please wait for your turn")
+                    MotionEvent.ACTION_CANCEL -> {
+                        displayMessage(message)
+                    }
                 }
             }
             true
@@ -169,6 +178,9 @@ class GameActivity : AppCompatActivity() {
         if(gameOwner) gameData.started = true
         if(!evaluateCompletedSquares()) {
             gameData.turn = (gameData.turn!! + 1) % gameData.currentNumPlayers!!
+        }
+        if(done){
+            gameData.finished = true
         }
         segmentsToMoveData()
         updateGame()
@@ -196,8 +208,6 @@ class GameActivity : AppCompatActivity() {
     }
 
     private fun initializeGrid(){
-        pointMatrix.clear()
-        squareMatrix.clear()
         for (i in 0 until columns) {
             pointMatrix.add(arrayListOf())
             for (j in 0 until rows) {
@@ -228,8 +238,7 @@ class GameActivity : AppCompatActivity() {
         drawCircleGrid()
         gameView.setImageBitmap(gameBitmap)
         setChatText()
-
-        if(gameData.turn == playerNumber) displayMessage("YOUR TURN")
+        drawScores()
     }
 
     private fun drawCurrentLine() {
@@ -277,6 +286,13 @@ class GameActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    private fun drawScores(){
+        yellowScoreTV.text = scores[playerColors.indexOf(Color.YELLOW)].toString()
+        blueScoreTV.text = scores[playerColors.indexOf(Color.BLUE)].toString()
+        greenScoreTV.text = scores[playerColors.indexOf(Color.GREEN)].toString()
+        redScoreTV.text = scores[playerColors.indexOf(Color.RED)].toString()
     }
 
     private fun setChatText(){
@@ -343,6 +359,7 @@ class GameActivity : AppCompatActivity() {
 
     private fun evaluateCompletedSquares() : Boolean{
         var newBox = false
+        var allSquaresFilled = true
         for(i in 0 until (columns - 1)){
             for (j in 0 until (rows - 1)){
                 if(segmentsContain(Point(i,j), Point(i,j+1))
@@ -351,11 +368,16 @@ class GameActivity : AppCompatActivity() {
                 && segmentsContain(Point(i+1,j), Point(i+1,j+1))){
                     if(squareMatrix[i][j].player == null){
                         newBox = true
-                        squareMatrix[i][j].player = segments.last().player
+                        val segmentPlayer = segments.last().player
+                        squareMatrix[i][j].player = segmentPlayer
+                        scores[segmentPlayer]++
                     }
                 }
+               if(squareMatrix[i][j].player == null)
+                   allSquaresFilled = false
             }
         }
+        if(allSquaresFilled) done = true
         return newBox
     }
 
@@ -430,10 +452,6 @@ class GameActivity : AppCompatActivity() {
                                 finishWithMessage("$gameName has already started")
                                 return@addOnSuccessListener
                             }
-                        if (gameData.finished!!) {
-                            finishWithMessage("$gameName has already finished")
-                            return@addOnSuccessListener
-                        }
                         if (gameData.currentNumPlayers!! >= gameData.maxPlayers!!) {
                             finishWithMessage("$gameName is already full")
                             return@addOnSuccessListener
