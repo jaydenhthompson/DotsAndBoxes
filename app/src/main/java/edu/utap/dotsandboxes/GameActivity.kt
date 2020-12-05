@@ -203,8 +203,8 @@ class GameActivity : AppCompatActivity() {
         chatTV.movementMethod = ScrollingMovementMethod()
 
         initPointMatrix()
-        initializeSquareMatrix()
         initializeGrid()
+        initializeSquareMatrix()
         drawGame()
     }
 
@@ -277,8 +277,14 @@ class GameActivity : AppCompatActivity() {
 
         for(segment in segments){
             paint.color = ColorUtils.blendARGB(playerColors[segment.player], Color.BLACK, 0.15f)
-            val start = pointMatrix[segment.a.x][segment.a.y]
-            val end   = pointMatrix[segment.b.x][segment.b.y]
+            var start = Point()
+            var end = Point()
+            try {
+                start = pointMatrix[segment.a.x][segment.a.y]
+                end = pointMatrix[segment.b.x][segment.b.y]
+            } catch (e: java.lang.IndexOutOfBoundsException){
+                return
+            }
             canvas.drawLine(start.x.toFloat(), start.y.toFloat(),
                     end.x.toFloat(), end.y.toFloat(), paint)
         }
@@ -399,7 +405,21 @@ class GameActivity : AppCompatActivity() {
                    allSquaresFilled = false
             }
         }
-        if(allSquaresFilled) done = true
+        if(allSquaresFilled)
+        {
+            done = true
+            var winner = gameData.playerNames?.get(0)!!
+            var currentBest = scores[0]
+            for(i in 1 until scores.size){
+               if(scores[i] > currentBest){
+                   winner = gameData.playerNames?.get(i)!!
+                   currentBest = scores[i]
+               } else if (scores[i] == currentBest){
+                   winner = "$winner and ${gameData.playerNames?.get(i)!!}"
+               }
+            }
+            gameData.winner = winner
+        }
         return newBox
     }
 
@@ -474,24 +494,29 @@ class GameActivity : AppCompatActivity() {
                 gameData = snapshot!!.toObject(GameData::class.java)!!
                 moveDataToSegments()
                 drawGame()
+
+                gameData.winner?.let { winner ->
+                    if(gameData.finished!!) displayMessage("$winner win(s)!")
+                }
             }
     }
 
     private fun joinGame(){
         db.collection(globalGamesCollection).document(gameName).get()
             .addOnSuccessListener {document ->
-                document?.let {
+                document?.let { it ->
                     val data = it.toObject(GameData::class.java)
                     if(data != null){
                         gameData = data
-                            if (gameData.started!!) {
-                                finishWithMessage("$gameName has already started")
-                                return@addOnSuccessListener
-                            }
+                        if (gameData.started!!) {
+                            finishWithMessage("$gameName has already started")
+                            return@addOnSuccessListener
+                        }
                         if (gameData.currentNumPlayers!! >= gameData.maxPlayers!!) {
                             finishWithMessage("$gameName is already full")
                             return@addOnSuccessListener
                         }
+
                         gameUuid = gameData.uuid!!
                         playerNumber = gameData.currentNumPlayers!!
                         gameData.currentNumPlayers = gameData.currentNumPlayers!! + 1

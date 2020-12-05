@@ -18,6 +18,7 @@ data class GameData(
 
     var moves             : ArrayList<MoveData>? = null,
     var chat              : String ?             = null,
+    var winner            : String ?             = null,
 
     @ServerTimestamp
     val timestamp : Timestamp? = null,
