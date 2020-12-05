@@ -202,9 +202,19 @@ class GameActivity : AppCompatActivity() {
 
         chatTV.movementMethod = ScrollingMovementMethod()
 
-        initializeGrid()
+        initPointMatrix()
         initializeSquareMatrix()
+        initializeGrid()
         drawGame()
+    }
+
+    private fun initPointMatrix(){
+        for (i in 0 until columns) {
+            pointMatrix.add(arrayListOf())
+            for (j in 0 until rows) {
+                pointMatrix[i][j] = Point()
+            }
+        }
     }
 
     private fun initializeGrid(){
@@ -216,14 +226,12 @@ class GameActivity : AppCompatActivity() {
 
         circleRadius = ((columnWidth + rowHeight) / 2F) / 5F
 
-        pointMatrix.clear()
         for (i in 0 until columns) {
-            pointMatrix.add(arrayListOf())
             for (j in 0 until rows) {
                 val xCoordinate = (i * columnWidth) + (columnWidth / 2)
                 val yCoordinate = (j * rowHeight) + (rowHeight / 2)
 
-                pointMatrix[i].add(Point(xCoordinate, yCoordinate))
+                pointMatrix[i][j] = Point(xCoordinate, yCoordinate)
             }
         }
     }
@@ -232,7 +240,7 @@ class GameActivity : AppCompatActivity() {
         for(i in 0 until (columns - 1)){
             squareMatrix.add(arrayListOf())
             for (j in 0 until (rows - 1)){
-                squareMatrix[i].add(Square(pointMatrix[i][j], pointMatrix[i+1][j+1], null))
+                squareMatrix[i].add(Square(Point(i,j), Point(i+1,j+1), null))
             }
         }
     }
@@ -292,9 +300,11 @@ class GameActivity : AppCompatActivity() {
             for(square in column) {
                 square.player?.let { player ->
                     paint.color = playerColors[player]
+                    val topLeft = pointMatrix[square.topLeftPoint.x][square.topLeftPoint.y]
+                    val bottomRight = pointMatrix[square.bottomRightPoint.x][square.bottomRightPoint.y]
                     canvas.drawRect(
-                            square.topLeftPoint.x.toFloat(), square.topLeftPoint.y.toFloat(),
-                            square.bottomRightPoint.x.toFloat(), square.bottomRightPoint.y.toFloat(),
+                            topLeft.x.toFloat(), topLeft.y.toFloat(),
+                            bottomRight.x.toFloat(), bottomRight.y.toFloat(),
                             paint)
                 }
             }
