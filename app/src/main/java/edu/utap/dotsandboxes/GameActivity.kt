@@ -1,5 +1,6 @@
 package edu.utap.dotsandboxes
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.*
 import android.os.Bundle
@@ -11,12 +12,12 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.graphics.ColorUtils
-import androidx.lifecycle.MutableLiveData
-import com.google.android.gms.tasks.Tasks
 import com.google.firebase.firestore.FirebaseFirestore
 import edu.utap.dotsandboxes.data.GameData
 import edu.utap.dotsandboxes.data.MoveData
 import kotlinx.android.synthetic.main.content_game.*
+import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.math.abs
 import kotlin.math.pow
 import kotlin.math.sqrt
@@ -25,6 +26,7 @@ class GameActivity : AppCompatActivity() {
     ////////////////////////////
     /// Local Game Variables ///
     ////////////////////////////
+    private var gameUuid = ""
     private var gameName = ""
     private var gameWidth = 0
     private var gameHeight = 0
@@ -95,6 +97,8 @@ class GameActivity : AppCompatActivity() {
             columns         = extras.getInt(MainActivity.numberOfColsKey)
             rows            = extras.getInt(MainActivity.numberOfRowsKey)
 
+            gameUuid = UUID.randomUUID().toString()
+
             establishGameDocument()
         }
         else{
@@ -140,19 +144,18 @@ class GameActivity : AppCompatActivity() {
                 MotionEvent.ACTION_UP -> {
                     if(gameData.currentNumPlayers!! <= 1) {
                         displayMessage("Trying to play by yourself?")
+                        drawGame()
                     }
                     else if(checkIfPointsAdjacent()){
                         val segmentCandidate = Segment(startPoint, endPoint, playerNumber)
-                        startPoint = Point()
-                        endPoint = Point()
                         if(!segmentsContain(segmentCandidate.a, segmentCandidate.b)) {
                             segments.add(segmentCandidate)
                             performMove()
                         }
-                        else {
-                            drawGame()
-                        }
                     }
+                    startPoint = Point()
+                    endPoint = Point()
+                    drawGame()
                 }
                 MotionEvent.ACTION_CANCEL -> {
                     displayMessage("Please wait for your turn")
@@ -171,6 +174,7 @@ class GameActivity : AppCompatActivity() {
         updateGame()
     }
 
+    @SuppressLint("ShowToast")
     private fun initializeBoard(){
 
         gameWidth = gameView.width
@@ -192,6 +196,8 @@ class GameActivity : AppCompatActivity() {
     }
 
     private fun initializeGrid(){
+        pointMatrix.clear()
+        squareMatrix.clear()
         for (i in 0 until columns) {
             pointMatrix.add(arrayListOf())
             for (j in 0 until rows) {
@@ -222,6 +228,8 @@ class GameActivity : AppCompatActivity() {
         drawCircleGrid()
         gameView.setImageBitmap(gameBitmap)
         setChatText()
+
+        if(gameData.turn == playerNumber) displayMessage("YOUR TURN")
     }
 
     private fun drawCurrentLine() {
@@ -374,6 +382,7 @@ class GameActivity : AppCompatActivity() {
                 evaluateCompletedSquares()
             }
         }
+        Log.d("segments", segments.toString())
     }
 
     private fun segmentsToMoveData(){
@@ -407,9 +416,6 @@ class GameActivity : AppCompatActivity() {
                 gameData = snapshot!!.toObject(GameData::class.java)!!
                 moveDataToSegments()
                 drawGame()
-                if(currentTurn != gameData.turn){
-                    currentTurn = gameData.turn
-                }
             }
     }
 
@@ -432,6 +438,7 @@ class GameActivity : AppCompatActivity() {
                             finishWithMessage("$gameName is already full")
                             return@addOnSuccessListener
                         }
+                        gameUuid = gameData.uuid!!
                         playerNumber = gameData.currentNumPlayers!!
                         gameData.currentNumPlayers = gameData.currentNumPlayers!! + 1
                         gameData.playerNames?.add(playerName)
@@ -454,6 +461,7 @@ class GameActivity : AppCompatActivity() {
 
     private fun establishGameDocument(){
         gameData = GameData().apply {
+            uuid = gameUuid
             started = false
             finished = false
             maxPlayers = maxPlayerNumber
@@ -482,7 +490,7 @@ class GameActivity : AppCompatActivity() {
         var addition = chatET.text.toString()
         if(joinMessage) addition = "JOINED"
 
-        var chatText = "${gameData.chat!!}\n$playerName: $addition"
+        val chatText = "${gameData.chat!!}\n$playerName: $addition"
         db.collection(globalGamesCollection)
             .document(gameName)
             .update("chat", chatText)

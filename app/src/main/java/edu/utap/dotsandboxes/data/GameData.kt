@@ -2,8 +2,11 @@ package edu.utap.dotsandboxes.data
 
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.ServerTimestamp
+import java.util.*
+import kotlin.collections.ArrayList
 
 data class GameData(
+    var uuid              : String?            = null,
     var started           : Boolean?           = null,
     var finished          : Boolean?           = null,
     var maxPlayers        : Int?               = null,
